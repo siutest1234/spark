@@ -320,6 +320,24 @@ private[clustering] object LDA {
 
   private[clustering] def isTermVertex(v: (VertexId, _)): Boolean = v._1 < 0
 
+  private[clustering] def vertexLog(
+    vertex: (VertexId, TopicCounts),
+    eta: Double,
+    alpha: Double,
+    N_k: TopicCounts,
+    smoothed_N_k: TopicCounts): Double = {
+    if (isTermVertex(vertex)) {
+      val N_wk = vertex._2
+      val smoothed_N_wk: TopicCounts = N_wk + (eta - 1.0)
+      val phi_wk: TopicCounts = smoothed_N_wk :/ smoothed_N_k
+      (eta - 1.0) * brzSum(phi_wk.map(math.log))
+    } else {
+      val N_kj = vertex._2
+      val smoothed_N_kj: TopicCounts = N_kj + (alpha - 1.0)
+      val theta_kj: TopicCounts = normalize(smoothed_N_kj, 1.0)
+      (alpha - 1.0) * brzSum(theta_kj.map(math.log))
+    }
+  }
   /**
    * Optimizer for EM algorithm which stores data + parameter graph, plus algorithm parameters.
    *
@@ -403,18 +421,8 @@ private[clustering] object LDA {
       // Doc vertex: Compute theta_{kj}.  Use to compute prior log probability.
       val N_k = globalTopicTotals
       val smoothed_N_k: TopicCounts = N_k + (vocabSize * (eta - 1.0))
-      graph.vertices.map { vertex =>
-        if (isTermVertex(vertex)) {
-          val N_wk = vertex._2
-          val smoothed_N_wk: TopicCounts = N_wk + (eta - 1.0)
-          val phi_wk: TopicCounts = smoothed_N_wk :/ smoothed_N_k
-          (eta - 1.0) * brzSum(phi_wk.map(math.log))
-        } else {
-          val N_kj = vertex._2
-          val smoothed_N_kj: TopicCounts = N_kj + (alpha - 1.0)
-          val theta_kj: TopicCounts = normalize(smoothed_N_kj, 1.0)
-          (alpha - 1.0) * brzSum(theta_kj.map(math.log))
-        }
+      graph.vertices.map { v =>
+        vertexLog(v, eta, alpha, N_k, smoothed_N_k)
       }.sum
     }
 
