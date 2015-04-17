@@ -240,7 +240,7 @@ class LDA private (
       val elapsedSeconds = (System.nanoTime() - start) / 1e9
       iterationTimes(iter) = elapsedSeconds
       logInfo(s"LDA EM takes $iter:         $elapsedSeconds")
-      logInfo(s"LDA EM logPrior $iter:         ${state.logPrior}")
+      // logInfo(s"LDA EM logPrior $iter:         ${state.logPrior}")
       iter += 1
     }
     state.graphCheckpointer.deleteAllCheckpoints()
