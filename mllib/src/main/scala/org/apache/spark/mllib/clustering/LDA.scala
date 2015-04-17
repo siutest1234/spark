@@ -321,12 +321,12 @@ private[clustering] object LDA {
   private[clustering] def isTermVertex(v: (VertexId, _)): Boolean = v._1 < 0
 
   private[clustering] def vertexLog(
-    graph: Graph[TopicCounts, TokenCount],
+    vertices: RDD[(VertexId, TopicCounts)],
     eta: Double,
     alpha: Double,
     N_k: TopicCounts,
     smoothed_N_k: TopicCounts): Double = {
-    graph.vertices.map { vertex =>
+    vertices.map { vertex =>
       if (isTermVertex(vertex)) {
         val N_wk = vertex._2
         val smoothed_N_wk: TopicCounts = N_wk + (eta - 1.0)
@@ -340,6 +340,7 @@ private[clustering] object LDA {
       }
     }.sum
   }
+
   /**
    * Optimizer for EM algorithm which stores data + parameter graph, plus algorithm parameters.
    *
@@ -423,7 +424,7 @@ private[clustering] object LDA {
       // Doc vertex: Compute theta_{kj}.  Use to compute prior log probability.
       val N_k = globalTopicTotals
       val smoothed_N_k: TopicCounts = N_k + (vocabSize * (eta - 1.0))
-      vertexLog(graph, eta, alpha, N_k, smoothed_N_k)
+      vertexLog(graph.vertices.map(t => t), eta, alpha, N_k, smoothed_N_k)
     }
 
   }
